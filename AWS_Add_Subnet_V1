@@ -1,0 +1,54 @@
+import boto3,csv
+from botocore.exceptions import ClientError
+region_name = 'us-east-1'
+
+## Function to Get VPC ID.
+
+def getVpc(resource='ec2',region_name='NONE',cidr='None'):
+    print(f"\nGetting VPC from Region {region_name}")
+    client = boto3.client(resource,region_name)
+    resp = client.describe_vpcs()
+    # print(resp['Vpcs'][0]['CidrBlock'])
+    if cidr in resp['Vpcs'][0]['CidrBlock']:
+        vpcID = resp['Vpcs'][0]['VpcId']
+        return vpcID
+    else:
+        print(f"CIDR Details not found {cidr}")
+    
+
+## Function to Create Subnet and associate with Routing table. This also find if same subnet already exist
+## or new subnet creation overlapped with exist one. This is handled with Try/except ClientError
+
+
+def createsubnet_rt(region_name,az_name,subnetcidr,vpcid,resource='ec2',igwID='igwid',rtID='Default'):
+    client = boto3.client(resource,region_name)
+    subnet_list = []
+    for i in client.describe_subnets()['Subnets']:
+        subnet_list.append(i['CidrBlock'])
+    if subnetcidr not in subnet_list:
+        try:
+            resp = client.create_subnet(AvailabilityZone=az_name,CidrBlock=subnetcidr,VpcId=vpcid)
+            subnetID = resp['Subnet']['SubnetId']
+            client.associate_route_table(RouteTableId=rtID,SubnetId=subnetID)
+            print (f"\nCreating Subnets {subnetcidr} in {az_name} and region is {region_name} ")
+            print(f"\nAssociating Subnets {subnetcidr} in  Routing Table for the AZ {az_name}, Our Region is {region_name}")
+            print (f"\nSubnet {subnetcidr} created and associated in Routing Table {rtID}")
+        except ClientError as e:
+            print (f"\nCreating Subnets {subnetcidr} in {az_name} and region is {region_name} ")
+            print (f"Provided Subnet {subnetcidr} is overlappend subnet. {e}")
+    else:
+        print (f"\n This Subnet {subnetcidr} already exist, Not creating again.")
+    print("*" * 100)
+
+## Calling both function ...
+getVpcID =  getVpc(region_name=region_name,cidr='172.172.0.0/16')
+
+with open('subnetfile.csv') as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    csv_reader = list(csv_reader)
+    for row in csv_reader[1:]:
+        subnet_id = row[0]
+        az_name = row[1]
+        rt_id = row[2]
+        createsubnet_rt(subnetcidr=subnet_id,
+                vpcid=getVpcID,region_name = region_name,az_name=az_name,igwID='igwid',rtID = rt_id)
