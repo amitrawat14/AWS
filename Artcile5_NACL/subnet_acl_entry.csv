@@ -1,0 +1,12 @@
+CidrBlock,Direction,from_port,to_port,ProtocolNumber,Action,RuleNumber,,
+0.0.0.0/0,egress,443,443,6,allow,100,,
+10.0.0.0/8,egress,80,80,6,allow,110,,
+10.0.0.0/8,egress,443,443,6,allow,120,,
+10.0.0.0/8,egress,53,53,17,allow,130,,
+10.0.0.0/8,egress,80,80,6,allow,130,,Duplicate Entry
+10.0.0.0/8,egress,1030,1020,6,allow,154,,port-range is wrong
+10.0.0.0/8,egress,80,100,6,allow,100,,
+10.0.0.0/8,ingress,1025,65535,6,allow,110,,
+10.0.0.0/8,ingress,443,443,6,allow,120,,
+11.0.0.0/8,ingress,135,135,6,allow,130,,
+11.0.0.0/8,ingress,135,135,17,allow,130,,Duplicate Ingress Entry
